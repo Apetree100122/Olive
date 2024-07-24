@@ -79,14 +79,74 @@ class PileDataloader:
 
             for layer_index in range(32):
                 initial_inputs[f"past_key_values.{layer_index}.key"] = np.zeros(
-                    (1, 32, self.max_seq_len, 128), dtype=np.float16
+                    (1, 32, self.max_seq_len, 128), dtype=np.float32
                 )
                 initial_inputs[f"past_key_values.{layer_index}.value"] = np.zeros(
-                    (1, 32, self.max_seq_len, 128), dtype=np.float16
+                    (1, 32, self.max_seq_len, 128), dtype=np.float32
                 )
 
             yield initial_inputs, 0
 
+class PileDataloader2:
+    def __init__(self, batch_size=2, seqlen=8, max_seq_len=8, sub_folder="train"):
+        random.seed(0)
+        self.seqlen = seqlen
+        self.max_seq_len = max_seq_len
+        self.batch_size = batch_size
+        self.dataset = load_dataset("NeelNanda/pile-10k", split=sub_folder)
+        self.dataset = self.dataset.map(tokenize_function, batched=True)
+        self.dataset.set_format(type="torch", columns=["input_ids", "attention_mask"])
+
+    def __iter__(self):
+        length = len(self.dataset)
+        counter = 0
+
+        while counter < length:
+            batch_input_ids = []
+            batch_position_ids = []
+            batch_attention_mask = []
+
+            for _ in range(self.batch_size):
+                # Pick a random sample from the dataset that has at least seqlen tokens
+                sample_index = random.randint(0, len(self.dataset) - 1)
+                sample = self.dataset[sample_index]["input_ids"]
+                while sample.shape[0] < self.seqlen:
+                    sample_index = random.randint(0, len(self.dataset) - 1)
+                    sample = self.dataset[sample_index]["input_ids"]
+
+                # Randomly pick a subsequence of seqlen tokens in the middle of the dataset
+                token_start = random.randint(0, sample.shape[0] - self.seqlen)
+                token_end = token_start + self.seqlen
+                input_ids = sample[token_start:token_end].cpu().numpy().astype("int64")
+                position_ids = np.arange(self.seqlen, dtype=np.int64)
+                attention_mask = np.pad(
+                    np.ones(self.seqlen, dtype=np.int64), (0, self.max_seq_len - self.seqlen)
+                )
+
+                batch_input_ids.append(input_ids)
+                batch_position_ids.append(position_ids)
+                batch_attention_mask.append(attention_mask)
+
+            batch_input_ids = np.stack(batch_input_ids)
+            batch_position_ids = np.stack(batch_position_ids)
+            batch_attention_mask = np.stack(batch_attention_mask)
+
+            initial_inputs = {
+                "input_ids": batch_input_ids,
+                "position_ids": batch_position_ids,
+                "attention_mask": batch_attention_mask,
+            }
+
+            for layer_index in range(32):
+                initial_inputs[f"past_key_values.{layer_index}.key"] = np.zeros(
+                    (self.batch_size, 32, self.max_seq_len, 128), dtype=np.float32
+                )
+                initial_inputs[f"past_key_values.{layer_index}.value"] = np.zeros(
+                    (self.batch_size, 32, self.max_seq_len, 128), dtype=np.float32
+                )
+
+            yield initial_inputs, 0
+            counter += self.batch_size
 
 def calib_dataloader(data_dir, batch_size, *args, **kwargs):
-    return PileDataloader(batch_size=batch_size)
+    return PileDataloader2(batch_size=batch_size)
