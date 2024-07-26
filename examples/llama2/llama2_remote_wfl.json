@@ -22,7 +22,8 @@
                 "input_ids": { "0": "batch_size", "1": "sequence_length" },
                 "attention_mask": { "0": "batch_size", "1": "total_sequence_length" },
                 "position_ids": { "0": "batch_size", "1": "sequence_length" }
-            }
+            },
+	    "kv_cache": true
         }
     },
     "systems": {
@@ -98,28 +99,27 @@
                 "output_dir": "models/lora-checkpoints"
             }
         },
+	"4bit_awq_quantizer": { 
+	    "type": "AutoAWQQuantizer", 
+	    "pack_model_for_onnx_conversion": true, 
+	    "input_model_dtype": "fp32"
+	},
         "conversion": {
             "type": "OnnxConversion",
             "target_opset": 17,
+	    "device": "cuda",
             "save_as_external_data": true,
             "all_tensors_to_one_file": true
         },
-        "quantize": {
-            "type": "IncStaticQuantization",
-            "disable_search": true,
-            "backend": "onnxrt_cuda_ep",
-     	    "approach": "weight_only",
-            "device": "gpu",
-            "weight_only_config": {
-                "bits": 4,
-                "algorithm": "AWQ",
-                "group_size": 32
-            },
-            "dataloader_func": "calib_dataloader",
-            "calibration_sampling_size": [8],
+	"transformers_optimization": {
+            "type": "OrtTransformersOptimization",
             "save_as_external_data": true,
             "all_tensors_to_one_file": true,
-            "user_script": "user_script.py"
+            "model_type": "gpt2",
+            "opt_level": 0,
+            "only_onnxruntime": false,
+            "keep_io_types": false,
+            "float16": true
         }
     },
     "evaluator": "merged_evaluator",
