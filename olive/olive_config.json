@@ -108,7 +108,7 @@
         "directml": [ "onnxruntime-directml" ],
         "openvino": [ "openvino==2023.2.0", "nncf==2.7.0", "numpy<2.0" ],
         "tf": [ "tensorflow==1.15.0" ],
-        "inc": [ "neural-compressor" ],
+        "inc": [ "neural-compressor<3.0" ],
         "optimum": [ "optimum" ],
         "torch-tensorrt": [ "torch-tensorrt" ],
         "lora": [ "accelerate", "peft", "scipy" ],
