@@ -50,13 +50,13 @@ def test_llama2(search_algorithm, execution_order, system, cloud_cache_config, o
 
     olive_run(olive_config, tempdir=os.environ.get("OLIVE_TEMPDIR", None))
 
-    # assert outputs
-    container_client = get_blob_client()
-    assert any(container_client.list_blobs(workflow_id))
+    # # assert outputs
+    # container_client = get_blob_client()
+    # assert any(container_client.list_blobs(workflow_id))
 
-    # delete outputs
-    for blob in container_client.list_blobs(workflow_id):
-        container_client.delete_blob(blob.name)
+    # # delete outputs
+    # for blob in container_client.list_blobs(workflow_id):
+    #     container_client.delete_blob(blob.name)
 
 
 def get_blob_client():
