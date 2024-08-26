@@ -1,0 +1,8 @@
+global-exclude*.py[cod]
+recursive-include 
+examples*recursive-include 
+docs*prune*
+/**/_
+_pycache_
+_prune docs/build
+/**/*
